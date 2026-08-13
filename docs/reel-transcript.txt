@@ -1,0 +1,31 @@
+Here's how you can build your own Jarvis in one weekend using nine steps.
+Step one.
+Give it a home.
+Use an old laptop, a Mac mini, or a cloud server.
+Step two.
+Install an agenda harness.
+I use Hermes agent.
+This is the system that turns an AI model into an actual agent.
+Step three.
+Choose the model that powers it.
+This can be Claude, Codex, Gemini, you're not locked into anyone.
+Step four.
+Teach it who you are, what you do, and how your business works.
+Step five.
+Give it persistent memory.
+Something like Hancho AI, so it learns from previous conversations.
+Step six.
+Add skills that teach it how to handle specific jobs.
+Step seven.
+Connect it to the tools you need, like your email, calendar, documents, or your browser.
+Step eight.
+Connect it to communication channels like Slack, Telegram, or I message.
+You can also use Hermes voice powered by 11 labs, so you can talk to it and get that
+British voice, just like you see in the movies.
+And step nine, purely for the Jarvis field, use Claude design to build a custom interface.
+Someone connect Hermes voice to that interface, so that you can speak to your agent, just
+like Jarvis from Iron Man.
+And by Sunday night, you'll have an AI agent that knows your business, uses your tools,
+and even talks back to you.
+I've put the full weekend setup inside my free email course, Comment Jarvis, and I'll
+send you the link.
