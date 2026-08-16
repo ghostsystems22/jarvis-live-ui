@@ -24,7 +24,13 @@ if (!password || !cookieSecret) throw new Error('JARVIS_UI_PASSWORD and COOKIE_S
 
 app.register(cookie, { secret: cookieSecret });
 app.register(multipart, { limits: { files: 1, fileSize: 12 * 1024 * 1024 } });
-app.register(fastifyStatic, { root: path.join(root, 'dist'), wildcard: false });
+app.register(fastifyStatic, {
+  root: path.join(root, 'dist'),
+  wildcard: false,
+  setHeaders: (reply, filePath) => {
+    if (filePath.endsWith('sw.js')) reply.header('cache-control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  },
+});
 
 function sessionValue() { return crypto.createHmac('sha256', cookieSecret).update('jarvis-ui').digest('hex'); }
 function authenticated(request) { return request.cookies.jarvis_session === sessionValue(); }
