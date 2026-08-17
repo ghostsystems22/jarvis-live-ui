@@ -33,6 +33,178 @@ function dateLabel(day: string) { return new Intl.DateTimeFormat('en-GB', { week
 function phaseName(phaseId: string | undefined, phases: ApiRecord[]) { return phases.find((phase) => phase.id === phaseId)?.fields.name as string | undefined; }
 function projectName(projectId: string | undefined, projects: ApiRecord[]) { return projects.find((project) => project.id === projectId)?.fields.name as string | undefined; }
 
+
+function hexToRgb(hex: string) {
+  const clean = hex.replace('#', '').padEnd(6, '0').slice(0, 6);
+  const value = Number.parseInt(clean, 16);
+  if (Number.isNaN(value)) return { r: 143, g: 199, b: 255 };
+  return { r: (value >> 16) & 255, g: (value >> 8) & 255, b: value & 255 };
+}
+
+function seeded(seed: string) {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i += 1) h = Math.imul(h ^ seed.charCodeAt(i), 16777619);
+  return () => {
+    h += 0x6D2B79F5;
+    let t = h;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function HermesMoleculeLayer({ profiles, selectedId, onSelect }: { profiles: HermesProfile[]; selectedId: string; onSelect: (profile: HermesProfile) => void }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const frameRef = useRef<number | null>(null);
+  const hitRef = useRef<Array<{ id: string; x: number; y: number; r: number; profile: HermesProfile }>>([]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return undefined;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const particles = profiles.flatMap((profile, idx) => {
+      const rand = seeded(profile.id);
+      const count = profile.id === 'jarvis' ? 720 : profile.id === 'default' ? 620 : 380;
+      return Array.from({ length: count }, (_, i) => {
+        const golden = Math.PI * (3 - Math.sqrt(5));
+        const yy = 1 - (i / Math.max(1, count - 1)) * 2;
+        const rr = Math.sqrt(Math.max(0, 1 - yy * yy));
+        return {
+          profile,
+          idx,
+          yUnit: yy,
+          theta: golden * i + rand() * 0.4,
+          shell: rr,
+          jitter: (rand() - 0.5) * 0.18,
+          size: 0.45 + rand() * 1.15,
+          alpha: 0.18 + rand() * 0.58,
+          drift: rand() * Math.PI * 2,
+        };
+      });
+    });
+
+    const resize = () => {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+      canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
+
+    const loop = (now: number) => {
+      const rect = canvas.getBoundingClientRect();
+      const w = rect.width;
+      const h = rect.height;
+      const cx = w / 2;
+      const cy = h / 2;
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = '#020304';
+      ctx.fillRect(0, 0, w, h);
+
+      const nodes = profiles.map((profile, idx) => {
+        const n = Math.max(1, profiles.length - 1);
+        const hub = profile.id === 'jarvis' || (!profiles.some((p) => p.id === 'jarvis') && idx === 0);
+        const ringIndex = hub ? -1 : profiles.filter((p) => p.id !== 'jarvis').findIndex((p) => p.id === profile.id);
+        const angle = hub ? 0 : -Math.PI / 2 + (ringIndex / n) * Math.PI * 2;
+        const radius = Math.min(w, h) * (hub ? 0 : 0.34);
+        return {
+          profile,
+          x: cx + Math.cos(angle) * radius,
+          y: cy + Math.sin(angle) * radius,
+          r: hub ? 76 : 46,
+          hub,
+        };
+      });
+      hitRef.current = nodes.map((node) => ({ id: node.profile.id, x: node.x, y: node.y, r: node.r + 18, profile: node.profile }));
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+      ctx.setLineDash([4, 9]);
+      ctx.lineWidth = 0.6;
+      for (const node of nodes) {
+        if (node.hub) continue;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(node.x, node.y);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(cx, cy, Math.min(w, h) * 0.34, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(143,199,255,0.11)';
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const t = now * 0.001;
+      for (const p of particles) {
+        const node = nodes.find((candidate) => candidate.profile.id === p.profile.id);
+        if (!node) continue;
+        const active = selectedId === p.profile.id;
+        const running = p.profile.gateway === 'running';
+        const spin = t * (running ? 0.45 : 0.16) + p.idx * 0.25;
+        const theta = p.theta + spin;
+        const z = Math.sin(theta) * p.shell;
+        const depth = (z + 1) / 2;
+        const drift = Math.sin(t * 0.7 + p.drift) * node.r * 0.035;
+        const px = node.x + (Math.cos(theta) * p.shell + p.jitter) * node.r + drift;
+        const py = node.y - p.yUnit * node.r + Math.cos(t * 0.55 + p.drift) * node.r * 0.025;
+        const rgb = active ? hexToRgb(p.profile.color) : { r: 238, g: 238, b: 238 };
+        const alpha = p.alpha * (0.24 + depth * 0.76) * (running ? 1 : 0.48) * (active ? 1.35 : 0.72);
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${Math.min(1, alpha)})`;
+        ctx.arc(px, py, p.size * (0.7 + depth * 1.1) * (active ? 1.22 : 1), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      ctx.save();
+      ctx.font = "700 10px 'IBM Plex Mono', monospace";
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (const node of nodes) {
+        const active = selectedId === node.profile.id;
+        const rgb = hexToRgb(node.profile.color);
+        ctx.strokeStyle = active ? `rgba(${rgb.r},${rgb.g},${rgb.b},0.9)` : 'rgba(255,255,255,0.16)';
+        ctx.lineWidth = active ? 1.2 : 0.55;
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, node.r + 13, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = active ? `rgba(${rgb.r},${rgb.g},${rgb.b},0.95)` : 'rgba(241,233,224,0.72)';
+        ctx.fillText(node.profile.name, node.x, node.y + node.r + 32);
+        ctx.fillStyle = 'rgba(241,233,224,0.36)';
+        ctx.font = "700 8px 'IBM Plex Mono', monospace";
+        ctx.fillText(`${node.profile.skills} SKILLS · ${node.profile.model.slice(0, 18)}`, node.x, node.y + node.r + 46);
+        ctx.font = "700 10px 'IBM Plex Mono', monospace";
+      }
+      ctx.restore();
+
+      frameRef.current = requestAnimationFrame(loop);
+    };
+    frameRef.current = requestAnimationFrame(loop);
+    return () => {
+      if (frameRef.current) cancelAnimationFrame(frameRef.current);
+      ro.disconnect();
+    };
+  }, [profiles, selectedId]);
+
+  function click(event: React.MouseEvent<HTMLCanvasElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const hit = hitRef.current.find((node) => Math.hypot(node.x - x, node.y - y) <= node.r);
+    if (hit) onSelect(hit.profile);
+  }
+
+  return <canvas ref={canvasRef} className="hermes-molecule-canvas" onClick={click} />;
+}
+
 function CapacityDial({ value, committed, template, size = 'lg', onChange, readOnly = false }: { value: number; committed: number; template: number; size?: 'lg' | 'md' | 'sm'; onChange?: (hours: number) => void; readOnly?: boolean }) {
   const [draft, setDraft] = useState(value); useEffect(() => setDraft(value), [value]);
   const diameter = size === 'lg' ? 184 : size === 'md' ? 108 : 56;
@@ -133,7 +305,6 @@ export default function App() {
 
   function renderLab() {
     const profiles = lab.data?.profiles ?? [];
-    const nodeProfiles = profiles.slice(0, 9);
-    return <section className="lab-screen os-screen live-lab"><div className="screen-head"><div><p className="eyebrow">THE LAB</p><h1>Hermes agent network.</h1><span>Live VPS profiles, models, gateways and installed skills. Not Airtable. Not simulated.</span></div><button className="refresh-button" onClick={() => void loadLab()} type="button">SYNC HERMES ↻</button></div>{lab.error && <div className="alert-line">HERMES LAB ERROR — {lab.error}</div>}<div className="lab-grid hermes-lab-grid"><section className="panel graph-panel"><div className="panel-head"><p className="eyebrow">LOCAL VPS TOPOLOGY</p><span className="active-tag ok">{profiles.length || '—'} PROFILES</span></div><div className="agent-graph hermes-live-graph">{nodeProfiles.map((agent, index) => <button key={agent.id} type="button" onClick={() => { if (agents.some((candidate) => candidate.id === agent.id)) setAgentId(agent.id as AgentId); }} className={`agent-node node-${index} ${agent.gateway === 'running' ? 'node-running' : 'node-idle'}`} style={{ borderColor: `${agent.color}88` }}><b>{agent.name.slice(0, 2).toUpperCase()}</b><span>{agent.name}</span><small>{agent.model}</small></button>)}<div className="graph-core">JARVIS<br /><small>LIVE</small></div></div></section><section className="panel list-panel hermes-agent-panel"><div className="panel-head"><p className="eyebrow">HERMES PROFILES</p><span className="class-tag">{profiles.filter((item) => item.gateway === 'running').length} RUNNING</span></div><div className="record-list hermes-profile-list">{profiles.map((profile) => <article key={profile.id} className={profile.id === agentId ? 'selected-profile' : ''}><div><strong>{profile.name}</strong><span>{profile.role}</span><span>{profile.provider} / {profile.model}</span><span>{profile.skills} skills · gateway {profile.gateway}</span></div><button type="button" disabled={lab.running || !agents.some((agent) => agent.id === profile.id)} onClick={() => void dispatchLabAgent(profile)}>{agents.some((agent) => agent.id === profile.id) ? 'RUN ↗' : 'VIEW'}</button></article>)}</div></section><section className="panel list-panel hermes-ops-panel"><div className="panel-head"><p className="eyebrow">LIVE OPERATIONS</p><span className="class-tag">E2E</span></div><div className="lab-command-copy"><strong>Command input is shared with COMMAND.</strong><span>Type a prompt in the main command field, pick an agent here, hit RUN. Backend invokes the real Hermes CLI on this VPS.</span></div><div className="ops-log">{lab.output || 'No lab dispatch yet.'}</div><div className="panel-head compact"><p className="eyebrow">SKILLS SAMPLE</p><span className="class-tag">{selectedAgent.label}</span></div><div className="skill-chip-grid">{profiles.find((profile) => profile.id === agentId)?.skillNames?.map((skill) => <span key={skill}>{skill}</span>) ?? <span>Select an agent.</span>}</div></section></div></section>;
+    return <section className="lab-screen os-screen live-lab"><div className="screen-head"><div><p className="eyebrow">THE LAB</p><h1>Hermes agent network.</h1><span>Live VPS profiles, models, gateways and installed skills. Not Airtable. Not simulated.</span></div><button className="refresh-button" onClick={() => void loadLab()} type="button">SYNC HERMES ↻</button></div>{lab.error && <div className="alert-line">HERMES LAB ERROR — {lab.error}</div>}<div className="lab-grid hermes-lab-grid"><section className="panel graph-panel"><div className="panel-head"><p className="eyebrow">LOCAL VPS TOPOLOGY</p><span className="active-tag ok">{profiles.length || '—'} PROFILES</span></div><div className="agent-graph hermes-live-graph molecule-shell"><HermesMoleculeLayer profiles={profiles} selectedId={agentId} onSelect={(profile) => { if (agents.some((candidate) => candidate.id === profile.id)) setAgentId(profile.id as AgentId); }} /><div className="graph-core molecule-core">JARVIS<br /><small>MOLECULE LIVE</small></div></div></section><section className="panel list-panel hermes-agent-panel"><div className="panel-head"><p className="eyebrow">HERMES PROFILES</p><span className="class-tag">{profiles.filter((item) => item.gateway === 'running').length} RUNNING</span></div><div className="record-list hermes-profile-list">{profiles.map((profile) => <article key={profile.id} className={profile.id === agentId ? 'selected-profile' : ''}><div><strong>{profile.name}</strong><span>{profile.role}</span><span>{profile.provider} / {profile.model}</span><span>{profile.skills} skills · gateway {profile.gateway}</span></div><button type="button" disabled={lab.running || !agents.some((agent) => agent.id === profile.id)} onClick={() => void dispatchLabAgent(profile)}>{agents.some((agent) => agent.id === profile.id) ? 'RUN ↗' : 'VIEW'}</button></article>)}</div></section><section className="panel list-panel hermes-ops-panel"><div className="panel-head"><p className="eyebrow">LIVE OPERATIONS</p><span className="class-tag">E2E</span></div><div className="lab-command-copy"><strong>Command input is shared with COMMAND.</strong><span>Type a prompt in the main command field, pick an agent here, hit RUN. Backend invokes the real Hermes CLI on this VPS.</span></div><div className="ops-log">{lab.output || 'No lab dispatch yet.'}</div><div className="panel-head compact"><p className="eyebrow">SKILLS SAMPLE</p><span className="class-tag">{selectedAgent.label}</span></div><div className="skill-chip-grid">{profiles.find((profile) => profile.id === agentId)?.skillNames?.map((skill) => <span key={skill}>{skill}</span>) ?? <span>Select an agent.</span>}</div></section></div></section>;
   }
 }
