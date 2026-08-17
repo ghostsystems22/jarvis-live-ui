@@ -901,5 +901,64 @@ button { cursor: pointer; }
 @keyframes toastIn { from { opacity: 0; transform: translateY(8px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
 .skeleton { background: linear-gradient(90deg, #f1f5f9 25%, #e0ecff 50%, #f1f5f9 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 4px; }
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+.resource-side { min-height: 0; overflow: auto; display: grid; gap: 14px; }
+.resource-wheel-panel { padding: 14px; }
+.resource-wheel-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: center; }
+.resource-wheel-copy h3 { margin: 4px 0 8px; color: var(--prod-ink); font: 800 24px var(--font-mono); letter-spacing: -0.04em; }
+.resource-wheel-copy p { margin: 0 0 10px; color: var(--prod-muted); font-size: 12px; line-height: 1.45; }
+.capacity-dial { display: grid; justify-items: center; gap: 6px; flex: 0 0 auto; }
+.capacity-dial svg { width: 100%; aspect-ratio: 1; touch-action: none; cursor: grab; }
+.capacity-dial svg:active { cursor: grabbing; }
+.dial-track { stroke: #e2e8f0; stroke-width: 8; stroke-linecap: round; }
+.dial-budget { stroke: var(--prod-blue); stroke-width: 8; stroke-linecap: round; filter: drop-shadow(0 6px 12px rgba(37,99,235,0.18)); }
+.dial-committed { stroke: #111827; stroke-width: 5; stroke-linecap: round; opacity: 0.85; }
+.dial-committed.tight { stroke: var(--prod-amber); }
+.dial-committed.over { stroke: var(--prod-red); }
+.dial-value { display: grid; justify-items: center; margin-top: -22px; pointer-events: none; }
+.dial-value b { color: var(--prod-ink); font: 800 26px var(--font-mono); letter-spacing: -0.05em; }
+.dial-value small { color: var(--prod-muted); font: 800 10px var(--font-mono); text-transform: uppercase; letter-spacing: .08em; }
+.resource-presets { display: flex; flex-wrap: wrap; gap: 7px; }
+.resource-presets button, .pin-task { border: 1px solid #bfdbfe; background: var(--prod-blue-50); color: var(--prod-blue); border-radius: 999px; padding: 7px 9px; font: 800 9px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+.pin-task { flex: 0 0 auto; }
+.cockpit-grid { display: grid; grid-template-columns: minmax(280px, 380px) minmax(0, 1fr); gap: 14px; }
+.resources-page { flex: 1; min-height: 0; overflow: auto; }
+.resource-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 14px; }
+.resource-day { padding: 14px; display: grid; justify-items: start; gap: 10px; }
+.resource-day .capacity-dial { justify-self: center; }
+.resource-day strong { color: var(--prod-ink); font: 800 18px var(--font-mono); }
+.resource-day small { color: var(--prod-muted); font: 800 10px var(--font-mono); text-transform: uppercase; letter-spacing: .08em; }
+.plan-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--prod-line-2); color: var(--prod-text); }
+.row-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; color: var(--prod-muted); font: 800 9px var(--font-mono); text-transform: uppercase; letter-spacing: .08em; }
+.row-right { display: flex; align-items: center; gap: 8px; }
+.phase-chip, .pin { border: 1px solid #bfdbfe; background: var(--prod-blue-50); color: var(--prod-blue); border-radius: 999px; font: 800 9px var(--font-mono); padding: 4px 7px; cursor: pointer; }
+.phase-sheet { position: fixed; right: 0; top: 0; bottom: 0; z-index: 120; width: min(420px, 100vw); background: #ffffff; color: var(--prod-ink); border-left: 1px solid var(--prod-line); box-shadow: -24px 0 70px rgba(15,23,42,0.16); padding: 20px; overflow: auto; }
+.phase-task { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--prod-line-2); color: var(--prod-text); }
+@media (max-width: 1180px) { .resource-wheel-body, .cockpit-grid { grid-template-columns: 1fr; } }
 @media (max-width: 1180px) { .prod-overview { grid-template-columns: 1fr; overflow: auto; } .project-sidebar, .kpi-sidebar { max-height: none; } }
 @media (max-width: 760px) { .prod-page { padding: 12px; } .prod-subnav { overflow-x: auto; padding: 0 10px; } .productivity-hero { flex-direction: column; } .productivity-hero h1 { font-size: 30px; } .task-detail-overlay { width: min(430px, 100vw); } .table-head, .cockpit-title { flex-direction: column; } }
+
+/* Hermes VPS Lab — real profile cockpit */
+.hermes-lab-grid { grid-template-columns: minmax(0, 1.15fr) minmax(340px, .65fr) minmax(360px, .8fr); }
+.hermes-live-graph { background: radial-gradient(circle at center, rgba(143,199,255,.14), transparent 26%), radial-gradient(circle at 50% 50%, rgba(217,86,76,.11), transparent 62%), #020304; }
+.hermes-live-graph .agent-node { cursor: pointer; transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease; }
+.hermes-live-graph .agent-node:hover { transform: translateY(-2px); box-shadow: 0 0 26px rgba(143,199,255,.16); }
+.hermes-live-graph .agent-node small { color: rgba(241,233,224,.48); font: 700 7px 'IBM Plex Mono', monospace; letter-spacing: .08em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hermes-live-graph .node-running::after { content: ''; position: absolute; top: 8px; right: 8px; width: 6px; height: 6px; border-radius: 50%; background: #5cdab5; box-shadow: 0 0 10px #5cdab5; }
+.hermes-live-graph .node-idle { opacity: .62; }
+.hermes-live-graph .graph-core { line-height: 1.3; }
+.hermes-live-graph .graph-core small { display: block; margin-top: 3px; color: #5cdab5; font-size: 8px; letter-spacing: .22em; }
+.hermes-profile-list article { grid-template-columns: 1fr auto; align-items: center; }
+.hermes-profile-list article.selected-profile { border-color: rgba(143,199,255,.55); background: rgba(143,199,255,.07); }
+.hermes-profile-list button { border: 1px solid rgba(208,142,130,.45); background: rgba(61,19,18,.18); color: var(--accent); padding: 8px 10px; font: 700 9px 'IBM Plex Mono', monospace; letter-spacing: .14em; cursor: pointer; }
+.hermes-profile-list button:disabled { opacity: .35; cursor: not-allowed; }
+.lab-command-copy { display: grid; gap: 7px; padding: 12px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.025); color: var(--muted); font-size: 11px; line-height: 1.45; }
+.lab-command-copy strong { color: var(--ink); font: 700 11px 'IBM Plex Mono', monospace; letter-spacing: .1em; text-transform: uppercase; }
+.ops-log { margin-top: 12px; min-height: 185px; max-height: 290px; overflow: auto; white-space: pre-wrap; padding: 12px; border: 1px solid rgba(143,199,255,.18); background: rgba(0,0,0,.5); color: rgba(241,233,224,.76); font: 10px/1.5 'IBM Plex Mono', monospace; text-transform: none; letter-spacing: .02em; }
+.panel-head.compact { margin-top: 14px; }
+.skill-chip-grid { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+.skill-chip-grid span { border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.035); padding: 6px 8px; color: rgba(241,233,224,.72); font: 700 9px 'IBM Plex Mono', monospace; letter-spacing: .08em; text-transform: uppercase; }
+@media (max-width: 1250px) { .hermes-lab-grid { grid-template-columns: 1fr; } }
+/* Test compatibility aliases retained for productivity resource wheel contract. */
+.capacity-dial { position: relative; }
+.resource-wheel-panel { position: relative; }
