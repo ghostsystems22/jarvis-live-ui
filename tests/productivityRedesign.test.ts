@@ -14,9 +14,10 @@ describe('Cadence productivity redesign', () => {
     expect(appSource).toContain('prod-subnav');
   });
 
-  it('uses the black and green glass design system for Productivity', () => {
-    expect(cssSource).toContain('--green-500:    #22c55e');
-    expect(cssSource).toContain('--glass-bg:      rgba(0,15,5,0.55)');
+  it('uses a readable white, blue, and black design system for Productivity', () => {
+    expect(cssSource).toContain('--prod-bg:       #ffffff');
+    expect(cssSource).toContain('--prod-blue:     #2563eb');
+    expect(cssSource).toContain('--prod-ink:      #020617');
     expect(cssSource).toContain('#section-productivity');
     expect(cssSource).toContain('.glass');
   });

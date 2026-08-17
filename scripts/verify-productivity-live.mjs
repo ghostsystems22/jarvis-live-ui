@@ -10,8 +10,12 @@ await page.getByRole('button', { name: 'CADENCE' }).click();
 await page.waitForSelector('.prod-subnav-item', { timeout: 60000 });
 await page.waitForTimeout(1500);
 const text = await page.locator('#section-productivity').innerText({ timeout: 30000 });
-await page.screenshot({ path: '/root/jarvis-live-ui/artifacts/productivity-redesign-live.png', fullPage: true });
+await page.screenshot({ path: '/root/jarvis-live-ui/artifacts/productivity-light-readable-live.png', fullPage: true });
+const bg = await page.locator('#section-productivity').evaluate((el) => getComputedStyle(el).backgroundColor);
+const color = await page.locator('#section-productivity').evaluate((el) => getComputedStyle(el).color);
 console.log(JSON.stringify({
+  backgroundColor: bg,
+  textColor: color,
   hasOverview: text.includes('OVERVIEW'),
   hasTasks: text.includes('TASKS'),
   hasProjects: text.includes('PROJECTS'),
