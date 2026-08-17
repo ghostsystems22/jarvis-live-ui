@@ -6,6 +6,9 @@ export const agents = [
   { id: 'sentinel', label: 'SENTINEL', role: 'Verification', accent: 'green' },
   { id: 'helios', label: 'HELIOS', role: 'Growth & content', accent: 'amber' },
   { id: 'nexus', label: 'NEXUS', role: 'Fiber operations', accent: 'blue' },
+  { id: 'athena', label: 'ATHENA', role: 'Research & intel', accent: 'violet' },
+  { id: 'ares', label: 'ARES', role: 'Strike team', accent: 'orange' },
+  { id: 'scrappy', label: 'SCRAPPY', role: 'Recon & scraping', accent: 'green' },
 ] as const;
 
 export const models = [
